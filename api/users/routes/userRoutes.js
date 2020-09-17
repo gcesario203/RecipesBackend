@@ -1,11 +1,11 @@
 module.exports = app =>{
     const {save,get,getById,remove} = app.api.users.controllers.userController
 
-    app.route('/usuario')
+    app.route('/usuarios')
         .post(save)
         .get(get)
 
-    app.route('/usuario/:id')
+    app.route('/usuarios/:id')
         .get(getById)
         .delete(remove)
 }
