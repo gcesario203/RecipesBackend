@@ -1,4 +1,6 @@
 module.exports = app =>{
+    const authSecret = 'ALSBJHjbksnkldfjknajbk1¨¨%!¨&@2lç3JBA'
+
     function existOrError(value, msg){
         if(!value) throw msg
         if(Array.isArray(value) && value.length === 0) throw msg
@@ -62,6 +64,7 @@ module.exports = app =>{
         validPassword,
         validId,
         countItensInCollections,
-        checkIfItemExists
+        checkIfItemExists,
+        authSecret
     }
 }

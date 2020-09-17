@@ -1,3 +1,5 @@
+const bcrypt = require('bcrypt-nodejs')
+
 module.exports = app =>{
     const { 
         existOrError,
@@ -9,6 +11,10 @@ module.exports = app =>{
         countItensInCollections,
         checkIfItemExists
     } = app.api.global
+    const encryptPassword = password => {
+        const salt = bcrypt.genSaltSync(10)
+        return bcrypt.hashSync(password, salt)
+    }
 
     const save = async(req,res)=>{
         const usuario = {...req.body}
@@ -26,12 +32,15 @@ module.exports = app =>{
                     .where({email:usuario.email})
                     .orWhere({username:usuario.username})
                     .first()
+
             if(!req.params.id){
                 notExistOrError(userFromDb, 'Usuário ja cadastrado')
             }
         }catch(err){
             return res.status(400).send(err)
         }
+
+        usuario.senha = encryptPassword(usuario.senha)
 
         delete usuario.confirmSenha
 
