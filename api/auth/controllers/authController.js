@@ -1,43 +1,43 @@
+const {authSecret} = require('../../../.env')
 const jwt = require('jwt-simple')
 const bcrypt = require('bcrypt-nodejs')
-const { authSecret } = require('../../../.env')
 
-module.exports = app =>{
-    const signIn = async (req,res) =>{
-        const usuarioParametro = {...req.body}
-        if(!usuarioParametro.email || !usuarioParametro.senha){
-            return res.status(400).send('Informe o usuário e a senha')
+module.exports = app => {
+    const signIn = async (req, res) => {
+        if(!req.body.email || !req.body.senha){
+            return res.status(400).send("Informe usuário e senha")
         }
 
-        const usuarioDb = await app.db('usuarios')
-                                    .where({email:usuarioParametro.email})
-                                    .first()
+        const user = await app.db('usuarios')
+                        .where({email:req.body.email})
+                        .first()
 
-        if(!usuarioDb) return res.status(400).send('Usuário não encontrado')
+        if(!user) return res.status(400).send("usuário não encontrado")
 
-        const isMatch = bcrypt.compareSync(usuarioParametro.senha,usuarioDb.senha)
+        const isMatch = bcrypt.compareSync(req.body.senha,user.senha)
 
-        if(!isMatch) return res.status(401).send('Email/Senha invalido')
+        if(!isMatch) return res.status(401).send('Email/Senha inválidos')
 
         const now = Math.floor(Date.now()/1000)
 
-        const payload ={
-            id:usuarioDb.id,
-            username:usuarioDb.username,
-            email:usuarioDb.email,
-            admin:usuarioDb.admin,
+        const payload = {
+            id: user.id,
+            name: user.name,
+            email:user.email,
+            admin:user.admin,
             iat:now,
-            exp:now+(60*60*24*10)
+            exp:now+(60*60*24*3)
         }
 
         res.json({
             ...payload,
-            token:jwt.encode(payload.authSecret)
+            token:jwt.encode(payload,authSecret)
         })
     }
 
-    const validateToken = async (req,res) =>{
-        const userData = {...req.body} || null
+    const validateToken = async (req,res)=>{
+        const userData = req.body || null
+
         try {
             if(userData){
                 const token = jwt.decode(userData.token, authSecret)
@@ -45,13 +45,10 @@ module.exports = app =>{
                     return res.send(true)
                 }
             }
-        } catch (err) {
+        } catch (msg) {
             res.send(false)
         }
     }
 
-    return {
-        signIn,
-        validateToken
-    }
+    return {signIn, validateToken}
 }
