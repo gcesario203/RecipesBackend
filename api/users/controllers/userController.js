@@ -26,7 +26,7 @@ module.exports = app =>{
                     .where({email:usuario.email})
                     .orWhere({username:usuario.username})
                     .first()
-            if(!usuario.id){
+            if(!req.params.id){
                 notExistOrError(userFromDb, 'Usuário ja cadastrado')
             }
         }catch(err){
@@ -35,10 +35,10 @@ module.exports = app =>{
 
         delete usuario.confirmSenha
 
-        if(usuario.id){
+        if(req.params.id){
             app.db('usuarios')
             .update(usuario)
-            .where({ id: usuario.id })
+            .where({ id: req.params.id })
             .then(_ => res.status(202).send('usuário modificado com sucesso'))
             .catch(err => res.status(500).send(err))
         }else{

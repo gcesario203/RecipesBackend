@@ -7,5 +7,6 @@ module.exports = app =>{
 
     app.route('/usuarios/:id')
         .get(getById)
+        .put(save)
         .delete(remove)
 }
