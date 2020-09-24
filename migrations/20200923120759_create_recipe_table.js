@@ -6,6 +6,7 @@ exports.up = function(knex) {
             table.string('local_origem').notNull()
             table.timestamp('tempo_preparo', { precision: 6 }).defaultTo(knex.fn.now(6))
             table.integer('usuario_id').references('id').inTable('usuarios').notNull()
+            table.integer('id_categoria').references('id_categoria').inTable('categorias').notNull()
         })
 }
 
