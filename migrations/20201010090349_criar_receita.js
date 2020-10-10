@@ -6,7 +6,13 @@ exports.up = function(knex) {
             table.string('local_origem').notNull()
             table.string('receita_img_url')
             table.timestamp('tempo_preparo', { precision: 6 }).defaultTo(knex.fn.now(6))
-            table.integer('usuario_id').unsigned().references('usuario_id').inTable('usuarios').notNull()
+            table.integer('usuario_id')
+            .unsigned()
+            .references('usuario_id')
+            .inTable('usuarios')
+            .onUpdate('CASCADE')
+            .onDelete('CASCADE')
+            .notNull()
         })
 }
 

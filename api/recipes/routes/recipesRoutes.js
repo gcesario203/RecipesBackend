@@ -4,10 +4,13 @@ module.exports = app => {
 
     app.route('/receitas')
         .get(get)
-        .post(authenticate(save))
+        .post(authenticate())
+        .post(save)
 
     app.route('/receitas/:id')
         .get(getById)
-        .put(authenticate(save))
-        .delete(authenticate(remove))
+        .put(authenticate())
+        .put(save)
+        .delete(authenticate())
+        .delete(remove)
 }

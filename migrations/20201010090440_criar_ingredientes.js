@@ -4,7 +4,7 @@ exports.up = function(knex) {
         table.string('nome_ingrediente').notNull()
         table.string('ingrediente_img_url')
         table.string('medida').notNull()
-        table.integer('receita_id').unsigned().references('receita_id').inTable('receitas').notNull()
+        table.integer('receita_id').unsigned().references('receita_id').inTable('receitas').onUpdate('CASCADE').onDelete('CASCADE').notNull()
     })
   }
   
