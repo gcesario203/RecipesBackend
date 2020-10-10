@@ -1,15 +1,15 @@
 module.exports = app =>{
     const { authenticate } = app.config.passport
-    const {save,get,getById,remove} = app.api.users.controllers.userController
+    const {save,get,getById,remove} = app.api.users.controllers.categoryController
 
-    app.route('/usuarios')
+    app.route('/categorias')
         .all(authenticate())
         .post(app.admin(save))
         .get(app.admin(get))
 
-    app.route('/usuarios/:id')
+    app.route('/categorias/:id')
         .all(authenticate())
-        .get(app.admin(getById))
+        .get(getById)
         .put(app.admin(save))
         .delete(app.admin(remove))
 }

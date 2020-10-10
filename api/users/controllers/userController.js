@@ -11,6 +11,7 @@ module.exports = app =>{
         countItensInCollections,
         checkIfItemExists
     } = app.api.global
+
     const encryptPassword = password => {
         const salt = bcrypt.genSaltSync(10)
         return bcrypt.hashSync(password, salt)
@@ -47,7 +48,7 @@ module.exports = app =>{
         if(req.params.id){
             app.db('usuarios')
             .update(usuario)
-            .where({ id: req.params.id })
+            .where({usuario_id: req.params.id })
             .then(_ => res.status(202).send('usuário modificado com sucesso'))
             .catch(err => res.status(500).send(err))
         }else{
@@ -63,7 +64,7 @@ module.exports = app =>{
     const get = async (req,res)=>{
         const page = req.query.page || 1
 
-        const result = await countItensInCollections('usuarios','id')
+        const result = await countItensInCollections('usuarios','usuario_id')
         const count = parseInt(result.count)
 
         app.db('usuarios')
@@ -91,7 +92,7 @@ module.exports = app =>{
 
         app.db('usuarios')
             .select('id','username','email','admin')
-            .where({id: req.params.id})
+            .where({usuario_id: req.params.id})
             .then(usuario=> res.status(200).json({
                 data:usuario
             }))
@@ -110,7 +111,7 @@ module.exports = app =>{
         }
 
         app.db('usuarios')
-            .where({id : req.params.id})
+            .where({usuario_id : req.params.id})
             .del()
             .then(_=>res.status(200).send('Usuário deletado com sucesso'))
             .catch(err => res.status(400).send(err))

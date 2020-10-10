@@ -1,0 +1,94 @@
+module.exports = app =>{
+    const {notExistOrError,existOrError,countItensInCollections,validId,checkIfItemExists} = app.api.global
+
+    const save = async(req,res)=>{
+        const category = {...req.body}
+
+        try{
+            existOrError(category.nome, "Nome da categoria não informado")
+
+            const categoryFromDb = await app.db('categorias')
+                                            .where({nome_categoria:category.nome})
+                                            .first()
+
+            if(!req.params.id){
+                notExistOrError(categoryFromDb,"Categoria ja existente")
+            }
+
+            if(req.params.id){
+                app.db('categorias')
+                    .update(category)
+                    .where({id:req.params.id})
+                    .then( _ => res.status(202).send('Categoria modificada com sucesso'))
+                    .catch( err => res.status(500).send(err))
+            }
+        }catch(msg){
+            return res.status(400).send(msg)
+        }
+    }
+
+    const limit = 3
+
+    const get = async(req,res) =>{
+        const page = req.query.page || 1
+
+        const result = countItensInCollections("categorias","categoria_id")
+        const count = parseInt(result.count)
+
+        app.db('categorias')
+            .select('categoria_id','nome_categoria')
+            .limit(limit)
+            .offset(page*limit-limit)
+            .then(categorias =>res.status(200).json({
+                data:categorias,
+                count,
+                limit
+            }))
+            .catch( err => res.status(500).send(err) )
+    }
+
+    const getById = async(req,res)=>{
+        try{
+            validId(req.params.id, "Id invalido")
+
+            const existId = checkIfItemExists("categorias","categoria_id")
+
+            existOrError(existId,"Categoria Inexistente")
+        }catch(msg){
+            return res.status(500).send(msg)
+        }
+
+        app.db('categorias')
+            .select('categoria_id','nome_categoria')
+            .where({categoria_id:req.params.id})
+            .then(categoria=>res.status(200).json({
+                data:categoria
+            }))
+            .catch(err => res.status(404).send(err))
+    }
+
+    const remove = async (req,res) =>{
+        try {
+            validId(req.params.id, "Id inválido")
+
+            const existId = await checkIfItemExists('categorias', req.params.id)
+
+            existOrError(existId, 'Categoria inexistente')
+        } catch (err) {
+            return res.status(400).send(err)
+        }
+
+        app.db('categorias')
+            .where({categoria_id : req.params.id})
+            .del()
+            .then(_=>res.status(200).send('Categoria deletada com sucesso'))
+            .catch(err => res.status(400).send(err))
+    }
+
+    return{
+        save,
+        get,
+        getById,
+        remove
+    }
+}
