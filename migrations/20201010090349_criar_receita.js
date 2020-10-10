@@ -1,12 +1,12 @@
 exports.up = function(knex) {
     return knex.schema.createTable('receitas', table=>{
-            table.increments('id_receita').primary()
+            table.increments('receita_id').primary()
             table.string('nome_receita').notNull()
             table.string('modo_preparo').notNull()
             table.string('local_origem').notNull()
+            table.string('receita_img_url')
             table.timestamp('tempo_preparo', { precision: 6 }).defaultTo(knex.fn.now(6))
-            table.integer('usuario_id').references('id').inTable('usuarios').notNull()
-            table.integer('id_categoria').references('id_categoria').inTable('categorias').notNull()
+            table.integer('usuario_id').unsigned().references('usuario_id').inTable('usuarios').notNull()
         })
 }
 

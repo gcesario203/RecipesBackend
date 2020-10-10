@@ -5,7 +5,9 @@
   "author": "Cesao",
   "license": "MIT",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "latest": "yarn knex migrate:latest",
+    "rollback": "yarn knex migrate:rollback"
   },
   "dependencies": {
     "bcrypt-nodejs": "^0.0.3",
@@ -16,6 +18,7 @@
     "global": "^4.4.0",
     "jwt-simple": "^0.5.6",
     "knex": "^0.21.5",
+    "mysql": "^2.18.1",
     "passport": "^0.4.1",
     "passport-jwt": "^4.0.0",
     "pg": "^8.3.3"

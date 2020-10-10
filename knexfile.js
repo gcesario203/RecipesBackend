@@ -2,7 +2,7 @@
 const { db } = require('./.env')
 
 module.exports = {
-  client: 'postgres',
+  client: 'mysql',
   connection:db,
   pool: {
     min: 2,
