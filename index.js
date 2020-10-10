@@ -17,6 +17,7 @@ consign()
     .then('./api/auth/routes')
     .then('./api/categories/controllers')
     .then('./api/categories/routes')
+    .then('./api')
     .into(app)
 
 app.listen(port, ()=>{
