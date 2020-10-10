@@ -5,10 +5,10 @@ module.exports = app =>{
         const category = {...req.body}
 
         try{
-            existOrError(category.nome, "Nome da categoria não informado")
+            existOrError(category.nome_categoria, "Nome da categoria não informado")
 
             const categoryFromDb = await app.db('categorias')
-                                            .where({nome_categoria:category.nome})
+                                            .where({nome_categoria:category.nome_categoria})
                                             .first()
 
             if(!req.params.id){
@@ -18,8 +18,13 @@ module.exports = app =>{
             if(req.params.id){
                 app.db('categorias')
                     .update(category)
-                    .where({id:req.params.id})
+                    .where({categoria_id:req.params.id})
                     .then( _ => res.status(202).send('Categoria modificada com sucesso'))
+                    .catch( err => res.status(500).send(err))
+            }else{
+                app.db('categorias')
+                    .insert(category)
+                    .then( _ => res.status(202).send('Categoria criada com sucesso'))
                     .catch( err => res.status(500).send(err))
             }
         }catch(msg){

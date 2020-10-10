@@ -21,8 +21,8 @@ module.exports = app => {
         const now = Math.floor(Date.now()/1000)
 
         const payload = {
-            id: user.id,
-            name: user.name,
+            id: user.usuario_id,
+            usuario: user.username,
             email:user.email,
             admin:user.admin,
             iat:now,

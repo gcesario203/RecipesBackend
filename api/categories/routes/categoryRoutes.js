@@ -1,6 +1,6 @@
 module.exports = app =>{
     const { authenticate } = app.config.passport
-    const {save,get,getById,remove} = app.api.users.controllers.categoryController
+    const {save,get,getById,remove} = app.api.categories.controllers.categoryController
 
     app.route('/categorias')
         .all(authenticate())
