@@ -8,8 +8,7 @@ module.exports = app =>{
         validEmail,
         validPassword,
         validId,
-        countItensInCollections,
-        checkIfItemExists
+        countItensInCollections
     } = app.api.global
 
     const encryptPassword = password => {
@@ -64,8 +63,16 @@ module.exports = app =>{
     const get = async (req,res)=>{
         const page = req.query.page || 1
 
-        const result = await countItensInCollections('usuarios','usuario_id')
-        const count = parseInt(result.count)
+        const result = await app.db('categorias')
+            .count()
+            .first()
+
+        const count = JSON.parse(JSON.stringify(result))
+        let total = 0;
+
+        for(var value in count){
+            total = count[value]
+        }
 
         app.db('usuarios')
             .select('id','username','email','admin')
@@ -73,7 +80,7 @@ module.exports = app =>{
             .offset(page*limit-limit)
             .then(usuarios=> res.status(200).json({
                 data:usuarios,
-                count,
+                total,
                 limit
             }))
             .catch(err => res.status(500).send(err))
@@ -83,7 +90,9 @@ module.exports = app =>{
         try {
             validId(req.params.id, "Id invalido")
 
-            const existId = await checkIfItemExists('usuarios',req.params.id)
+            const existId = await app.db('usuarios')
+                                    .where({usuario_id:req.params.id})
+                                    .first()
             
             existOrError(existId,'Usário inexistente')
         } catch (err) {
@@ -103,7 +112,9 @@ module.exports = app =>{
         try {
             validId(req.params.id, "Id inválido")
 
-            const existId = await checkIfItemExists('usuarios', req.params.id)
+            const existId = await app.db('usuarios')
+                                    .where({usuario_id:req.params.id})
+                                    .first()
 
             existOrError(existId, 'Usuário inexistente')
         } catch (err) {

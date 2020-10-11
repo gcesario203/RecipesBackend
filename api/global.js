@@ -50,12 +50,6 @@ module.exports = app =>{
                 .first()
     }
 
-    function checkIfItemExists(collectionName, itemId){
-        return app.db(collectionName)
-                .where({id:itemId})
-                .first()
-    }
-
     return {
         existOrError,
         notExistOrError,
@@ -64,7 +58,6 @@ module.exports = app =>{
         validPassword,
         validId,
         countItensInCollections,
-        checkIfItemExists,
         authSecret
     }
 }

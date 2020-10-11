@@ -1,5 +1,5 @@
 module.exports = app => {
-    const { notExistOrError, existOrError, countItensInCollections, validId, checkIfItemExists } = app.api.global
+    const {  existOrError, validId } = app.api.global
 
     const save = async (req, res) => {
         const recipe = { ...req.body.receita }
@@ -27,12 +27,11 @@ module.exports = app => {
                 .select('categoria_id')
                 .where({ categoria_id: categorias[categoria] })
                 .first()
-                .then(ctr => {catArray.push(ctr.categoria_id)}
-                    
+                .then(ctr => { catArray.push(ctr.categoria_id) }
+
                 )
                 .catch(err => err)
         }
-
 
         if (recipe.receita_id) {
             await app.db.transaction(async trx => {
@@ -49,7 +48,6 @@ module.exports = app => {
                                     await app.db("categorizar")
                                         .transacting(trx)
                                         .insert({ categoria_id: catArray[categoriaId], receita_id: recipe.receita_id })
-
                                 }
                                 await app.db("ingredientes")
                                     .del()
@@ -100,14 +98,59 @@ module.exports = app => {
     const get = async (req, res) => {
         const page = req.query.page || 1
 
-        const result = await countItensInCollections('receitas', 'receita_id')
-        const count = parseInt(result.count)
+        const result = await app.db('receitas')
+            .count()
+            .first()
 
+        const count = JSON.parse(JSON.stringify(result))
+        let total = 0;
 
-        await app.db('receitas')
-            .select('receita_id', 'nome_receita', 'modo_preparo', 'local_origem', 'tempo_preparo', 'usuario_id',)
-            .limit(limit).offset(page * limit - limit)
-            .then(receitas => res.json({ data: receitas, count, limit }))
+        for (var value in count) {
+            total = count[value]
+        }
+
+        await app.db('categorizar')
+            .select(
+                "receitas.receita_id",
+                "receitas.nome_receita",
+                "receitas.modo_preparo",
+                "receitas.local_origem",
+                "receitas.receita_img_url",
+                "receitas.tempo_preparo",
+                "usuarios.usuario_id",
+                "usuarios.username"
+            )
+            .innerJoin('receitas', 'receitas.receita_id', 'categorizar.receita_id')
+            .innerJoin('usuarios', 'usuarios.usuario_id', 'receitas.usuario_id')
+            .limit(limit)
+            .offset(page * limit - limit)
+            .then(async receitas => {
+                for (let receita in receitas) {
+                    await app.db('ingredientes')
+                        .select(
+                            "ingredientes.nome_ingrediente",
+                            "ingredientes.medida"
+                        )
+                        .where({ receita_id: receitas[receita].receita_id })
+                        .then(ingredientes => {
+                            const parsedIngredientes = JSON.parse(JSON.stringify(ingredientes))
+                            receitas[receita] = { ...receitas[receita], ingredientes: parsedIngredientes }
+                        })
+
+                    await app.db('categorizar')
+                        .select(
+                            "categorias.categoria_id",
+                            "categorias.nome_categoria"
+                        )
+                        .innerJoin('categorias', 'categorias.categoria_id', 'categorizar.categoria_id')
+                        .where({ receita_id: receitas[receita].receita_id })
+                        .then(categorias => {
+                            const parsedCategorias = JSON.parse(JSON.stringify(categorias))
+                            receitas[receita] = { ...receitas[receita], categorias: parsedCategorias }
+                        })
+                }
+                res.status(200).json({ data: receitas, total, limit })
+            })
             .catch(err => res.status(500).send(err))
     }
 
@@ -115,7 +158,9 @@ module.exports = app => {
         try {
             validId(req.params.id, "Id invalido")
 
-            const existId = await checkIfItemExists('receitas', req.params.id)
+            const existId = await app.db('receitas')
+                .where({ receita_id: req.params.id })
+                .first()
 
             existOrError(existId, 'Receita inexistente')
         } catch (err) {
