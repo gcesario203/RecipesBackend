@@ -4,7 +4,7 @@ module.exports = app => {
     const save = async (req, res) => {
         const recipe = { ...req.body.receita }
         const ingredientes = [...req.body.ingredientes]
-        const categorias = [req.body.categoria_id]
+        const categorias = [...req.body.categoria_id]
 
         if (req.params.id) recipe.receita_id = req.params.id
 
@@ -22,44 +22,46 @@ module.exports = app => {
 
         let catArray = [];
 
-        for(let categoria in categorias){
-            let categoriaDb = await app.db("categorias")
-            .where({ categoria_id: categorias[categoria] })
-            .first()
-
-            console.log(categoriaDb)
-
-            catArray.push(categoriaDb.categoria_id);
+        for (let categoria in categorias) {
+            await app.db("categorias")
+                .select('categoria_id')
+                .where({ categoria_id: categorias[categoria] })
+                .first()
+                .then(ctr => [
+                    catArray.push(ctr.categoria_id)
+                ])
+                .catch(err => err)
         }
 
+
         if (recipe.receita_id) {
-            app.db.transaction(async trx => {
+            await app.db.transaction(async trx => {
                 await app.db('receitas')
                     .transacting(trx)
-                    .where({receita_id:recipe.receita_id})
+                    .where({ receita_id: recipe.receita_id })
                     .update(recipe)
                     .then(async () => {
-                        for(let categoriaId in catArray){
-                            await app.db("categorizar")
-                            .transacting(trx)
-                            .update({ categoria_id: catArray[categoriaId], receita_id: recipe.receita_id})
-                            .where({receita_id:recipe.receita_id})
+                        await app.db("categorizar")
+                            .del()
+                            .where({ receita_id: recipe.receita_id })
                             .then(async () => {
-                                await app.db("ingredientes")
-                                        .del()
-                                        .where({receita_id:recipe.receita_id})
-
-                                for (let lIngredient in ingredientes) {
-                                    await app.db("ingredientes")
+                                for (let categoriaId in catArray) {
+                                    await app.db("categorizar")
                                         .transacting(trx)
-                                        .insert({ ...ingredientes[lIngredient], receita_id: recipe.receita_id})
-                                        .then(() => { trx.commit; })
-                                        .catch(()=>trx.rollback)
+                                        .insert({ categoria_id: catArray[categoriaId], receita_id: recipe.receita_id })
+
                                 }
+                                await app.db("ingredientes")
+                                    .del()
+                                    .where({ receita_id: recipe.receita_id })
+                                    .then(async () => {
+                                        for (let lIngredient in ingredientes) {
+                                            await app.db("ingredientes")
+                                                .transacting(trx)
+                                                .insert({ ...ingredientes[lIngredient], receita_id: recipe.receita_id })
+                                        }
+                                    })
                             })
-                            .then(trx.commit)
-                            .catch(trx.rollback);
-                        }
                     })
                     .then(trx.commit)
                     .catch(trx.rollback)
@@ -67,35 +69,29 @@ module.exports = app => {
                 .then(() => res.status(200).send("Receita atualizada com sucesso"))
                 .catch(() => res.status(500).send("Falha ao atualizar receita"))
         } else {
-            app.db.transaction(async trx => {
+            await app.db.transaction(async trx => {
                 await app.db('receitas')
                     .transacting(trx)
                     .insert(recipe)
                     .then(async receitaId => {
-                        for(let categoriaId in catArray){
-                            console.log(catArray[categoriaId])
+                        for (let categoriaId in catArray) {
                             await app.db("categorizar")
-                            .transacting(trx)
-                            .insert({ categoria_id:catArray[categoriaId], receita_id: receitaId[0] })
-                            .then(async () => {
-                                for (let lIngredient in ingredientes) {
-                                    console.log("uiui")
-                                    await app.db("ingredientes")
-                                        .transacting(trx)
-                                        .insert({ ...ingredientes[lIngredient], receita_id: receitaId[0] })
-                                        .then(() => { trx.commit; })
-                                        .catch(trx.rollback)
-                                }
-                            })
-                            .then(trx.commit)
-                            .catch(trx.rollback);
+                                .transacting(trx)
+                                .insert({ categoria_id: catArray[categoriaId], receita_id: receitaId[0] })
+                                .then(() => {
+                                    for (let lIngredient in ingredientes) {
+                                        app.db("ingredientes")
+                                            .transacting(trx)
+                                            .insert({ ...ingredientes[lIngredient], receita_id: receitaId[0] })
+                                    }
+                                })
                         }
                     })
                     .then(trx.commit)
                     .catch(trx.rollback)
             })
                 .then(() => res.status(200).send("Receita cadastrada com sucesso"))
-                .catch(() => res.status(500).send("Falha ao cadastrar receita"))
+                .catch(err => res.status(500).send(err))
         }
     }
 
