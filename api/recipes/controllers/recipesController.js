@@ -1,12 +1,10 @@
-const { transaction } = require("../../../config/db")
-
 module.exports = app => {
     const { notExistOrError, existOrError, countItensInCollections, validId, checkIfItemExists } = app.api.global
 
     const save = async (req, res) => {
         const recipe = { ...req.body.receita }
         const ingredientes = [...req.body.ingredientes]
-        const categoria = req.body.categoria_id
+        const categorias = [req.body.categoria_id]
 
         if (req.params.id) recipe.receita_id = req.params.id
 
@@ -17,14 +15,22 @@ module.exports = app => {
             existOrError(recipe.tempo_preparo, "Tempo de preparo não informado receita não informado")
             existOrError(recipe.usuario_id, "Criador da receita não informado")
             existOrError(ingredientes, "Receita precisa de ingredientes")
-            existOrError(categoria, "A receita precisa de uma categoria")
+            existOrError(categorias, "A receita precisa de uma categoria")
         } catch (msg) {
             return res.status(400).send(msg)
         }
 
-        const categoriaDb = await app.db("categorias")
-            .where({ categoria_id: categoria })
+        let catArray = [];
+
+        for(let categoria in categorias){
+            let categoriaDb = await app.db("categorias")
+            .where({ categoria_id: categorias[categoria] })
             .first()
+
+            console.log(categoriaDb)
+
+            catArray.push(categoriaDb.categoria_id);
+        }
 
         if (recipe.receita_id) {
             app.db.transaction(async trx => {
@@ -33,15 +39,16 @@ module.exports = app => {
                     .where({receita_id:recipe.receita_id})
                     .update(recipe)
                     .then(async () => {
-                        await app.db("categorizar")
+                        for(let categoriaId in catArray){
+                            await app.db("categorizar")
                             .transacting(trx)
-                            .update({ categoria_id: categoriaDb.categoria_id, receita_id: recipe.receita_id})
+                            .update({ categoria_id: catArray[categoriaId], receita_id: recipe.receita_id})
                             .where({receita_id:recipe.receita_id})
                             .then(async () => {
                                 await app.db("ingredientes")
                                         .del()
                                         .where({receita_id:recipe.receita_id})
-                                        
+
                                 for (let lIngredient in ingredientes) {
                                     await app.db("ingredientes")
                                         .transacting(trx)
@@ -52,6 +59,7 @@ module.exports = app => {
                             })
                             .then(trx.commit)
                             .catch(trx.rollback);
+                        }
                     })
                     .then(trx.commit)
                     .catch(trx.rollback)
@@ -64,9 +72,11 @@ module.exports = app => {
                     .transacting(trx)
                     .insert(recipe)
                     .then(async receitaId => {
-                        await app.db("categorizar")
+                        for(let categoriaId in catArray){
+                            console.log(catArray[categoriaId])
+                            await app.db("categorizar")
                             .transacting(trx)
-                            .insert({ categoria_id: categoriaDb.categoria_id, receita_id: receitaId[0] })
+                            .insert({ categoria_id:catArray[categoriaId], receita_id: receitaId[0] })
                             .then(async () => {
                                 for (let lIngredient in ingredientes) {
                                     console.log("uiui")
@@ -79,6 +89,7 @@ module.exports = app => {
                             })
                             .then(trx.commit)
                             .catch(trx.rollback);
+                        }
                     })
                     .then(trx.commit)
                     .catch(trx.rollback)
