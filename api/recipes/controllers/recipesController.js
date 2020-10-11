@@ -27,9 +27,9 @@ module.exports = app => {
                 .select('categoria_id')
                 .where({ categoria_id: categorias[categoria] })
                 .first()
-                .then(ctr => [
-                    catArray.push(ctr.categoria_id)
-                ])
+                .then(ctr => {catArray.push(ctr.categoria_id)}
+                    
+                )
                 .catch(err => err)
         }
 
