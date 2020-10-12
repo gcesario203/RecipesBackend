@@ -154,6 +154,75 @@ module.exports = app => {
             .catch(err => res.status(500).send(err))
     }
 
+    const recipeByCategory = async (req, res) => {
+        const page = req.query.page || 1
+        let total = 0;
+        try {
+
+
+            validId(req.params.id, "Id invalido")
+
+            const existId = await app.db('categorizar')
+                .where({ categoria_id: req.params.id })
+                .first()
+
+            existOrError(existId, "Nenhuma receita foi registrada nesta categoria")
+            const result = await app.db('categorizar')
+                .where({ categoria_id: req.params.id })
+                .count()
+                .first()
+
+            const count = JSON.parse(JSON.stringify(result))
+
+            for (var value in count) {
+                total = count[value]
+            }
+        }
+        catch (err) {
+            return res.status(400).send(err)
+        }
+
+        await app.db('categorizar')
+            .select(
+                "receitas.receita_id",
+                "receitas.nome_receita",
+                "receitas.modo_preparo",
+                "receitas.local_origem",
+                "receitas.receita_img_url",
+                "receitas.tempo_preparo",
+                "categorias.categoria_id",
+                "categorias.nome_categoria"
+            )
+            .innerJoin('categorias', 'categorias.categoria_id', 'categorizar.categoria_id')
+            .innerJoin('receitas', 'receitas.receita_id', 'categorizar.receita_id')
+            .where({
+                'categorizar.categoria_id': req.params.id
+            })
+            .limit(limit)
+            .offset(page * limit - limit)
+            .then(async receitasPorCategoria => {
+                for (let receita in receitasPorCategoria) {
+                    await app.db('ingredientes')
+                        .select(
+                            "ingredientes.nome_ingrediente",
+                            "ingredientes.medida"
+                        )
+                        .where({ receita_id: receitasPorCategoria[receita].receita_id })
+                        .then(ingredientes => {
+                            const parsedIngredientes = JSON.parse(JSON.stringify(ingredientes))
+                            receitasPorCategoria[receita] = { ...receitasPorCategoria[receita], ingredientes: parsedIngredientes }
+                        })
+                }
+
+                res.status(200).json({
+                    data: receitasPorCategoria,
+                    total,
+                    limit
+                })
+            })
+            .catch(err => res.status(500).send(err))
+    }
+
     const recipesByUser = async (req, res) => {
         const page = req.query.page || 1
         let total = 0;
@@ -166,7 +235,7 @@ module.exports = app => {
                 .where({ usuario_id: req.params.id })
                 .first()
 
-            existOrError(existId, "Usuário inexistente")
+            existOrError(existId, "Nenhuma receita encontrada")
             const result = await app.db('receitas')
                 .where({ usuario_id: req.params.id })
                 .count()
@@ -199,11 +268,26 @@ module.exports = app => {
             })
             .limit(limit)
             .offset(page * limit - limit)
-            .then(receitaPorUsuario => res.status(200).json({
-                data: receitaPorUsuario,
-                total,
-                limit
-            }))
+            .then(async receitasPorUsuario => {
+                for (let receita in receitasPorUsuario) {
+                    await app.db('ingredientes')
+                        .select(
+                            "ingredientes.nome_ingrediente",
+                            "ingredientes.medida"
+                        )
+                        .where({ receita_id: receitasPorUsuario[receita].receita_id })
+                        .then(ingredientes => {
+                            const parsedIngredientes = JSON.parse(JSON.stringify(ingredientes))
+                            receitasPorUsuario[receita] = { ...receitasPorUsuario[receita], ingredientes: parsedIngredientes }
+                        })
+                }
+
+                res.status(200).json({
+                    data:receitasPorUsuario,
+                    total,
+                    limit
+                })
+            })
             .catch(err => res.status(500).send(err))
     }
 
@@ -300,6 +384,7 @@ module.exports = app => {
         get,
         getById,
         remove,
-        recipesByUser
+        recipesByUser,
+        recipeByCategory
     }
 }
