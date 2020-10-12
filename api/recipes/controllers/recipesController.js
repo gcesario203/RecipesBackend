@@ -1,5 +1,5 @@
 module.exports = app => {
-    const {  existOrError, validId } = app.api.global
+    const { existOrError, validId } = app.api.global
 
     const save = async (req, res) => {
         const recipe = { ...req.body.receita }
@@ -154,6 +154,59 @@ module.exports = app => {
             .catch(err => res.status(500).send(err))
     }
 
+    const recipesByUser = async (req, res) => {
+        const page = req.query.page || 1
+        let total = 0;
+        try {
+
+
+            validId(req.params.id, "Id invalido")
+
+            const existId = await app.db('receitas')
+                .where({ usuario_id: req.params.id })
+                .first()
+
+            existOrError(existId, "Usuário inexistente")
+            const result = await app.db('receitas')
+                .where({ usuario_id: req.params.id })
+                .count()
+                .first()
+
+            const count = JSON.parse(JSON.stringify(result))
+
+            for (var value in count) {
+                total = count[value]
+            }
+        }
+        catch (err) {
+            return res.status(400).send(err)
+        }
+
+        await app.db('receitas')
+            .select(
+                "receitas.receita_id",
+                "receitas.nome_receita",
+                "receitas.modo_preparo",
+                "receitas.local_origem",
+                "receitas.receita_img_url",
+                "receitas.tempo_preparo",
+                "usuarios.usuario_id",
+                "usuarios.username"
+            )
+            .innerJoin('usuarios', 'usuarios.usuario_id', 'receitas.usuario_id')
+            .where({
+                'receitas.usuario_id': req.params.id
+            })
+            .limit(limit)
+            .offset(page * limit - limit)
+            .then(receitaPorUsuario => res.status(200).json({
+                data: receitaPorUsuario,
+                total,
+                limit
+            }))
+            .catch(err => res.status(500).send(err))
+    }
+
     const getById = async (req, res) => {
         try {
             validId(req.params.id, "Id invalido")
@@ -167,29 +220,76 @@ module.exports = app => {
             return res.status(400).send(err)
         }
 
-        await app.db('receitas')
-            .select('receita_id', 'nome_receita', 'modo_preparo', 'local_origem', 'tempo_preparo', 'usuario_id')
-            .where({ receita_id: req.params.id })
-            .then(receita => res.status(200).json({
-                data: receita
-            }))
+        await app.db('categorizar')
+            .select(
+                "receitas.receita_id",
+                "receitas.nome_receita",
+                "receitas.modo_preparo",
+                "receitas.local_origem",
+                "receitas.receita_img_url",
+                "receitas.tempo_preparo",
+                "usuarios.usuario_id",
+                "usuarios.username"
+            )
+            .innerJoin('receitas', 'receitas.receita_id', 'categorizar.receita_id')
+            .innerJoin('usuarios', 'usuarios.usuario_id', 'receitas.usuario_id')
+            .where({
+                'receitas.receita_id': req.params.id,
+                'categorizar.receita_id': req.params.id,
+            })
+            .then(async receitas => {
+                console.log(receitas[0])
+                await app.db('ingredientes')
+                    .select(
+                        "ingredientes.nome_ingrediente",
+                        "ingredientes.medida"
+                    )
+                    .where({ receita_id: receitas[0].receita_id })
+                    .then(ingredientes => {
+                        const parsedIngredientes = JSON.parse(JSON.stringify(ingredientes))
+                        receitas[0] = { ...receitas[0], ingredientes: parsedIngredientes }
+                    })
+
+                await app.db('categorizar')
+                    .select(
+                        "categorias.categoria_id",
+                        "categorias.nome_categoria"
+                    )
+                    .innerJoin('categorias', 'categorias.categoria_id', 'categorizar.categoria_id')
+                    .where({ receita_id: receitas[0].receita_id })
+                    .then(categorias => {
+                        const parsedCategorias = JSON.parse(JSON.stringify(categorias))
+                        receitas[0] = { ...receitas[0], categorias: parsedCategorias }
+                    })
+
+                res.status(200).json({ data: receitas[0] })
+            })
             .catch(err => res.status(500).send(err))
     }
 
     const remove = async (req, res) => {
         try {
             validId(req.params.id, "ID invalido")
-            const rowsDeleted = await app.db('receitas')
+
+            let rowsDeleted;
+
+            await app.db('categorizar')
                 .where({ receita_id: req.params.id })
                 .del()
+                .then(async () => {
+                    await app.db('receitas')
+                        .where({ receita_id: req.params.id })
+                        .del()
+                        .then(deletedRows => rowsDeleted = deletedRows)
+                })
 
             try {
-                existOrError(rowsDeleted, 'receita não encontrada')
+                existOrError(rowsDeleted, 'Eeceita não encontrada')
             } catch (msg) {
                 return res.status(400).send(msg)
             }
 
-            res.status(204).send()
+            res.status(204).send("Receita deletada com sucesso")
         } catch (msg) {
             return res.status(500).send(msg)
         }
@@ -199,6 +299,7 @@ module.exports = app => {
         save,
         get,
         getById,
-        remove
+        remove,
+        recipesByUser
     }
 }
