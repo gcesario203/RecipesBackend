@@ -2,19 +2,20 @@ module.exports = app =>{
     const {notExistOrError,existOrError,countItensInCollections,validId,checkIfItemExists} = app.api.global
 
     const saveFavorite = async(req,res)=>{
-        const idReceita = {...req.body}
-        const idUsuario = {...req.body.usuario}
+        const idReceita = req.body.receita_id
+        const idUsuario = req.body.usuario_id
 
         try{
-            validId(idReceita, "Id da receita invalido invalido")
+            validId(idReceita, "Id da receita invalido")
+            
 
             const checkRecipe  = await app.db("receitas")
-                                            .where({receita_id:idReceita})
+                                            .where({receita_id:idReceita}).first()
 
-            const checkUser = await app.db("usuarios").where({usuario_id:idUsuario})
+            const checkUser = await app.db("usuarios").where({usuario_id:idUsuario}).first()
 
-            notExistOrError(checkRecipe,"Receita inválida")
-            notExistOrError(checkUser, "Necessario estar autenticado para realizar esta operação")
+            existOrError(checkRecipe,"Receita inválida")
+            existOrError(checkUser, "Necessario estar autenticado para realizar esta operação")
         }
         catch(err){
             return res.status(404).send(err)
@@ -30,12 +31,12 @@ module.exports = app =>{
 
     const getFavorite = async(req,res) =>{
         const page = req.query.page || 1
-        const idUser = {...req.body.usuario}
+        const idUser = req.body.usuario_id
 
         try{
-            const checkUser = await app.db("usuarios").where({usuario_id:idUsuario})
+            const checkUser = await app.db("usuarios").where({usuario_id:idUser}).first()
 
-            notExistOrError(checkUser,"É preciso estar autenticado para realizar esta operação")
+            existOrError(checkUser, "Necessario estar autenticado para realizar esta operação")
         }catch(err){
             return res.status(404).send(err)
         }
@@ -53,7 +54,16 @@ module.exports = app =>{
         }
 
         await app.db('favoritos')
-                 .select()
+                 .select(
+                    "receitas.receita_id",
+                    "receitas.nome_receita",
+                    "receitas.modo_preparo",
+                    "receitas.local_origem",
+                    "receitas.receita_img_url",
+                    "receitas.tempo_preparo",
+                    "usuarios.usuario_id",
+                    "usuarios.username"
+                 )
                  .innerJoin('receitas','receitas.receita_id','favoritos.receita_id')
                  .innerJoin('usuarios','usuarios.usuario_id','favoritos.usuario_id')
                  .where({'favoritos.usuario_id':idUser})
@@ -134,7 +144,7 @@ module.exports = app =>{
             const checkRecipe  = await app.db("receitas")
                                             .where({receita_id:idReceita})
 
-            checkUser = await app.db("usuarios").where({usuario_id:idUsuario})
+            checkUser = await app.db("usuarios").where({usuario_id:idUsuario.usuario_id})
 
             notExistOrError(checkRecipe,"Receita inválida")
             notExistOrError(checkUser, "Necessario estar autenticado para realizar esta operação")

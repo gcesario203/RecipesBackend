@@ -14,13 +14,16 @@ module.exports = app =>{
         .put(app.admin(save))
         .delete(app.admin(remove))
 
-    app.route('/usuarios/favoritos')
-        .all(authenticate())
-        .get(getFavorite)
+    app.route('/usuarios/salvar-favorito')
+        .post(authenticate())
         .post(saveFavorite)
+        
+    app.route('/usuarios/buscar-favoritos')
+        .post(getFavorite)
 
-    app.route('/usuarios/favoritos/:id')
+    app.route('/usuarios/remover-favorito/:id')
         .all(authenticate())
-        .delete(remove)
-        .get(getById)
+        .delete(removeFavorite)
+        
+
 }
