@@ -28,7 +28,7 @@ module.exports = app =>{
 
     const limit = 3
 
-    const get = async(req,res) =>{
+    const getFavorite = async(req,res) =>{
         const page = req.query.page || 1
         const idUser = {...req.body.usuario}
 
@@ -82,7 +82,7 @@ module.exports = app =>{
                 .catch(err => res.status(500).send(err))
     }
 
-    const getById = async(req,res)=>{
+    const getFavoriteById = async(req,res)=>{
         const idUser = {...req.body.usuario}
         const idReceita = req.params.id
 
@@ -124,8 +124,8 @@ module.exports = app =>{
                 .catch(err => res.status(500).send(err))
     }
 
-    const remove = async (req,res) =>{
-        const idReceita = {...req.body}
+    const removeFavorite = async (req,res) =>{
+        const idReceita = req.params.id
         const idUsuario = {...req.body.usuario}
 
         try{
@@ -152,8 +152,8 @@ module.exports = app =>{
 
     return{
         saveFavorite,
-        get,
-        getById,
-        remove
+        getFavorite,
+        getFavoriteById,
+        removeFavorite
     }
 }
