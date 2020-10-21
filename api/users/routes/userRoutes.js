@@ -21,9 +21,12 @@ module.exports = app =>{
     app.route('/usuarios/buscar-favoritos')
         .post(getFavorite)
 
+    app.route('/usuarios/buscar-favorito/:id')
+        .post(getFavoriteById)
+
     app.route('/usuarios/remover-favorito/:id')
-        .all(authenticate())
-        .delete(removeFavorite)
+        .post(authenticate())
+        .post(removeFavorite)
         
 
 }

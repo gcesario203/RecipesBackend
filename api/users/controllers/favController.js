@@ -93,13 +93,15 @@ module.exports = app =>{
     }
 
     const getFavoriteById = async(req,res)=>{
-        const idUser = {...req.body.usuario}
+        const idUser = req.body.usuario_id
         const idReceita = req.params.id
 
         try{
-            const checkUser = await app.db("usuarios").where({usuario_id:idUsuario})
+            const checkUser = await app.db("usuarios").where({usuario_id:idUser}).first()
+            const checkRecipe = await app.db("favoritos").where({receita_id:idReceita,usuario_id:idUser}).first()
 
-            notExistOrError(checkUser,"É preciso estar autenticado para realizar esta operação")
+            existOrError(checkUser,"É preciso estar autenticado para realizar esta operação")
+            existOrError(checkRecipe, "Receita não se encontra na lista deste usuário")
         }catch(err){
             return res.status(404).send(err)
         }
@@ -109,8 +111,6 @@ module.exports = app =>{
                  .innerJoin('receitas','receitas.receita_id','favoritos.receita_id')
                  .innerJoin('usuarios','usuarios.usuario_id','favoritos.usuario_id')
                  .where({'favoritos.usuario_id':idUser,'favoritos.receita_id':idReceita})
-                 .limit(limit)
-                 .offset(page*limit-limit)
                  .then(async receitaFavorita => {
                     for (let receita in receitaFavorita) {
                         await app.db('ingredientes')
@@ -126,9 +126,7 @@ module.exports = app =>{
                     }
     
                     res.status(200).json({
-                        data:receitaFavorita,
-                        total,
-                        limit
+                        data:receitaFavorita
                     })
                 })
                 .catch(err => res.status(500).send(err))
@@ -136,20 +134,15 @@ module.exports = app =>{
 
     const removeFavorite = async (req,res) =>{
         const idReceita = req.params.id
-        const idUsuario = {...req.body.usuario}
+        const idUsuario = req.body.usuario_id
 
         try{
-            validId(idReceita, "Id da receita invalido invalido")
+            const checkUser = await app.db("usuarios").where({usuario_id:idUsuario}).first()
+            const checkRecipe = await app.db("favoritos").where({receita_id:idReceita,usuario_id:idUsuario}).first()
 
-            const checkRecipe  = await app.db("receitas")
-                                            .where({receita_id:idReceita})
-
-            checkUser = await app.db("usuarios").where({usuario_id:idUsuario.usuario_id})
-
-            notExistOrError(checkRecipe,"Receita inválida")
-            notExistOrError(checkUser, "Necessario estar autenticado para realizar esta operação")
-        }
-        catch(err){
+            existOrError(checkUser,"É preciso estar autenticado para realizar esta operação")
+            existOrError(checkRecipe, "Receita não se encontra na lista deste usuário")
+        }catch(err){
             return res.status(404).send(err)
         }
 
