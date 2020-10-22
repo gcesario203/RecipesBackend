@@ -9,7 +9,7 @@ module.exports = app =>{
 
     app.route('/categorias/:id')
         .all(authenticate())
-        .get(getById)
+        .get(app.admin(getById))
         .put(app.admin(save))
         .delete(app.admin(remove))
 }
