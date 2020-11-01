@@ -158,8 +158,6 @@ module.exports = app => {
         const page = req.query.page || 1
         let total = 0;
         try {
-
-
             validId(req.params.id, "Id invalido")
 
             const existId = await app.db('categorizar')

@@ -3,9 +3,10 @@ module.exports = app =>{
     const {save,get,getById,remove} = app.api.categories.controllers.categoryController
 
     app.route('/categorias')
-        .all(authenticate())
+        .get(get)
+        .post(authenticate())
         .post(app.admin(save))
-        .get(app.admin(get))
+        
 
     app.route('/categorias/:id')
         .all(authenticate())
