@@ -8,8 +8,8 @@ app.db = db
 app.admin = admin
 
 consign()
-    .include('./config/passport.js')
-    .then('./config/middlewares.js')
+    .include('./config/middlewares.js')
+    .then('./config/passport.js')
     .then('./api/global.js')
     .then('./api/users/controllers')
     .then('./api/users/routes')

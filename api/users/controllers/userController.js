@@ -20,7 +20,7 @@ module.exports = app =>{
         const usuario = {...req.body}
 
         try{
-            existOrError(usuario.username,'Username não informado')
+            existOrError(usuario.username,'Nome não informado')
             existOrError(usuario.email,'Email não informado')
             existOrError(usuario.senha,'Senha não informada')
             existOrError(usuario.confirmSenha,'Senha não informada')
@@ -30,7 +30,6 @@ module.exports = app =>{
 
             const userFromDb = await app.db('usuarios')
                     .where({email:usuario.email})
-                    .orWhere({username:usuario.username})
                     .first()
 
             if(!req.params.id){
