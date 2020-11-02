@@ -16,6 +16,27 @@ module.exports = app =>{
         return bcrypt.hashSync(password, salt)
     }
 
+    const getUserByName = async (req,res) =>{
+        try {
+            const result =  app.db('usuarios')
+                                .where('username', 'like', `%${req.query.usuario}%`)
+                                .first()
+
+            existOrError(result,"Usuário não encontrado")
+        } catch (msg) {
+            res.status(500).send(msg)
+        }
+
+
+        await app.db('usuarios')
+            .select('usuario_id')
+            .where('username', 'like', `%${req.query.usuario}%`)
+            .then(usuario => {res.status(200).json({
+                data: usuario,
+            });})
+            .catch(err => res.status(500).send(err))
+    }
+
     const save = async(req,res)=>{
         const usuario = {...req.body}
 
@@ -131,6 +152,7 @@ module.exports = app =>{
         save,
         get,
         getById,
-        remove
+        remove,
+        getUserByName
     }
 }

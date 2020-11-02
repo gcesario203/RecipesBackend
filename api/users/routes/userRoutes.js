@@ -1,6 +1,6 @@
 module.exports = app =>{
     const { authenticate } = app.config.passport
-    const {save,get,getById,remove} = app.api.users.controllers.userController
+    const {save,get,getById,remove,getUserByName} = app.api.users.controllers.userController
     const {saveFavorite,getFavorite,getFavoriteById,removeFavorite} = app.api.users.controllers.favController
 
     app.route('/usuarios')
@@ -17,6 +17,10 @@ module.exports = app =>{
     app.route('/usuarios/salvar-favorito')
         .post(authenticate())
         .post(saveFavorite)
+
+    app.route('/usuarioPorNome')
+        .get(authenticate())
+        .get(getUserByName)
         
     app.route('/usuarios/buscar-favoritos')
         .post(getFavorite)

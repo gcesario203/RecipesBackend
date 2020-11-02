@@ -1,5 +1,5 @@
 module.exports = app => {
-    const { notExistOrError, existOrError, countItensInCollections, validId } = app.api.global
+    const { notExistOrError, existOrError, countItensInCollections, validId,checkSql } = app.api.global
 
     const save = async (req, res) => {
         const category = { ...req.body }
@@ -33,6 +33,28 @@ module.exports = app => {
     }
 
     const limit = 3
+
+    const getByCatName = async (req,res) =>{
+        try {
+            checkSql(req.query.categoria, "Safado detectado")
+            const result =  app.db('categorias')
+                                .where('nome_categoria', 'like', `%${req.query.categoria}%`)
+                                .first()
+
+            existOrError(result,"Categoria não encontrada")
+        } catch (msg) {
+            res.status(500).send(msg)
+        }
+
+
+        await app.db('categorias')
+            .select('categoria_id', 'nome_categoria')
+            .where('nome_categoria', 'like', `%${req.query.categoria}%`)
+            .then(categoria => {res.status(200).json({
+                data: categoria,
+            });})
+            .catch(err => res.status(500).send(err))
+    }
 
     const get = async (req, res) => {
         const page = req.query.page || 1
@@ -106,6 +128,7 @@ module.exports = app => {
         save,
         get,
         getById,
-        remove
+        remove,
+        getByCatName
     }
 }

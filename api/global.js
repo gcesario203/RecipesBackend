@@ -44,10 +44,14 @@ module.exports = app =>{
         if(!validId) throw msg
     }
 
-    function countItensInCollections(collectionName, tableName){
-        return app.db(collectionName)
-                .count(tableName)
-                .first()
+    function checkSql(value,msg){
+        const defRegex = /^(and|or|union|select|delete|insert|update|join)+$/i
+        
+        let checkValue = defRegex.exec(value)
+
+        console.log(value)
+
+        if(checkValue) throw msg
     }
 
     return {
@@ -57,7 +61,7 @@ module.exports = app =>{
         validEmail,
         validPassword,
         validId,
-        countItensInCollections,
-        authSecret
+        authSecret,
+        checkSql
     }
 }
