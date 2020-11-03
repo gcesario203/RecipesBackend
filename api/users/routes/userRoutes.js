@@ -4,9 +4,9 @@ module.exports = app =>{
     const {saveFavorite,getFavorite,getFavoriteById,removeFavorite} = app.api.users.controllers.favController
 
     app.route('/usuarios')
-        .all(authenticate())
+        .get(get)
+        .post(authenticate())
         .post(app.admin(save))
-        .get(app.admin(get))
 
     app.route('/usuarios/:id')
         .all(authenticate())

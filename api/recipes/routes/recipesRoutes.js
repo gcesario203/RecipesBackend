@@ -1,5 +1,5 @@
 module.exports = app => {
-    const { get, save, getById, remove, recipesByUser, recipeByCategory } = app.api.recipes.controllers.recipesController
+    const { get, save, getById, remove, recipesByUser, recipeByCategory ,recipeByName} = app.api.recipes.controllers.recipesController
     const { authenticate } = app.config.passport
 
     app.route('/receitas')
@@ -13,6 +13,10 @@ module.exports = app => {
         .put(save)
         .delete(authenticate())
         .delete(remove)
+
+
+    app.route('/receitaPorNome')
+        .get(recipeByName)
 
     app.route('/receitas/usuario/:id')
         .get(recipesByUser)

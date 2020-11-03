@@ -20,6 +20,7 @@ module.exports = app =>{
         try {
             const result =  app.db('usuarios')
                                 .where('username', 'like', `%${req.query.usuario}%`)
+                                .andWhere({admin:0})
                                 .first()
 
             existOrError(result,"Usuário não encontrado")
@@ -29,8 +30,9 @@ module.exports = app =>{
 
 
         await app.db('usuarios')
-            .select('usuario_id')
+            .select('usuario_id','username')
             .where('username', 'like', `%${req.query.usuario}%`)
+            .andWhere({admin:0})
             .then(usuario => {res.status(200).json({
                 data: usuario,
             });})
@@ -83,8 +85,9 @@ module.exports = app =>{
     const get = async (req,res)=>{
         const page = req.query.page || 1
 
-        const result = await app.db('categorias')
+        const result = await app.db('usuarios')
             .count()
+            .where({admin:0})
             .first()
 
         const count = JSON.parse(JSON.stringify(result))
@@ -95,7 +98,8 @@ module.exports = app =>{
         }
 
         app.db('usuarios')
-            .select('id','username','email','admin')
+            .select('usuario_id','username','email')
+            .where({admin:0})
             .limit(limit)
             .offset(page*limit-limit)
             .then(usuarios=> res.status(200).json({
@@ -112,6 +116,7 @@ module.exports = app =>{
 
             const existId = await app.db('usuarios')
                                     .where({usuario_id:req.params.id})
+                                    .andWhere({admin:0})
                                     .first()
             
             existOrError(existId,'Usário inexistente')
@@ -122,6 +127,7 @@ module.exports = app =>{
         app.db('usuarios')
             .select('id','username','email','admin')
             .where({usuario_id: req.params.id})
+            .andWhere({admin:0})
             .then(usuario=> res.status(200).json({
                 data:usuario
             }))

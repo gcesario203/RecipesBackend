@@ -48,7 +48,7 @@ module.exports = app => {
 
 
         await app.db('categorias')
-            .select('categoria_id', 'nome_categoria')
+            .select('categoria_id','nome_categoria')
             .where('nome_categoria', 'like', `%${req.query.categoria}%`)
             .then(categoria => {res.status(200).json({
                 data: categoria,
